@@ -45,54 +45,62 @@ public:
 	void processInput() { ManualControl::processInput(); }
 };
 
-TEST(ManualControl, KillSwitch)
+class SwitchTest : public ::testing::Test
 {
-	// Disable autosaving parameters to avoid busy loop in param_set()
-	param_control_autosave(false);
+public:
+	void SetUp() override
+	{
+		// Disable autosaving parameters to avoid busy loop in param_set()
+		param_control_autosave(false);
 
-	// Set stick input timeout to half a second
-	const float com_rc_loss_t = .5f;
-	param_set(param_find("COM_RC_LOSS_T"), &com_rc_loss_t);
+		// Set stick input timeout to half a second
+		const float com_rc_loss_t = .5f;
+		param_set(param_find("COM_RC_LOSS_T"), &com_rc_loss_t);
+	}
 
-	uORB::PublicationData<manual_control_switches_s> manual_control_switches_pub{ORB_ID(manual_control_switches)};
-	uORB::PublicationData<manual_control_setpoint_s> manual_control_input_pub{ORB_ID(manual_control_input)};
-	uORB::SubscriptionData<manual_control_setpoint_s> manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
-	uORB::SubscriptionData<action_request_s> action_request_sub{ORB_ID(action_request)};
+	uORB::PublicationData<manual_control_switches_s> _manual_control_switches_pub{ORB_ID(manual_control_switches)};
+	uORB::PublicationData<manual_control_setpoint_s> _manual_control_input_pub{ORB_ID(manual_control_input)};
+	uORB::SubscriptionData<manual_control_setpoint_s> _manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
+	uORB::SubscriptionData<action_request_s> _action_request_sub{ORB_ID(action_request)};
 
-	TestManualControl manual_control;
+	TestManualControl _manual_control;
+};
 
+
+TEST_F(SwitchTest, KillSwitch)
+{
 	// GIVEN: a kill switch in off position
-	manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_OFF;
-	manual_control_switches_pub.get().timestamp_sample = hrt_absolute_time();
-	manual_control_switches_pub.update();
+	_manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_OFF;
+	_manual_control_switches_pub.get().timestamp_sample = hrt_absolute_time();
+	_manual_control_switches_pub.update();
 
 	// GIVEN: valid stick input from the RC
-	manual_control_input_pub.get().data_source = manual_control_setpoint_s::SOURCE_RC;
-	manual_control_input_pub.get().valid = true;
-	manual_control_input_pub.get().timestamp_sample = hrt_absolute_time();
-	manual_control_input_pub.update();
+	_manual_control_input_pub.get().data_source = manual_control_setpoint_s::SOURCE_RC;
+	_manual_control_input_pub.get().valid = true;
+	_manual_control_input_pub.get().timestamp_sample = hrt_absolute_time();
+	_manual_control_input_pub.update();
 
-	manual_control.processInput();
+	_manual_control.processInput();
 
 	// WHEN: the kill switch is switched on
-	manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_ON;
-	manual_control_switches_pub.update();
-	manual_control.processInput();
+	_manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_ON;
+	_manual_control_switches_pub.update();
+	_manual_control.processInput();
 
 	// THEN: the stick input is published for use
-	EXPECT_TRUE(manual_control_setpoint_sub.update());
-	EXPECT_TRUE(manual_control_setpoint_sub.get().valid);
+	EXPECT_TRUE(_manual_control_setpoint_sub.update());
+	EXPECT_TRUE(_manual_control_setpoint_sub.get().valid);
 
 	// THEN: a kill action request is published
-	EXPECT_TRUE(action_request_sub.update());
-	EXPECT_EQ(action_request_sub.get().action, ACTION_KILL);
+	EXPECT_TRUE(_action_request_sub.update());
+	EXPECT_EQ(_action_request_sub.get().action, ACTION_KILL);
 
 	// WHEN: the kill switch is switched off again
-	manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_OFF;
-	manual_control_switches_pub.update();
-	manual_control.processInput();
+	_manual_control_switches_pub.get().kill_switch = manual_control_switches_s::SWITCH_POS_OFF;
+	_manual_control_switches_pub.update();
+	_manual_control.processInput();
 
 	// THEN: an unkill action request is published
-	EXPECT_TRUE(action_request_sub.update());
-	EXPECT_EQ(action_request_sub.get().action, ACTION_UNKILL);
+	EXPECT_TRUE(_action_request_sub.update());
+	EXPECT_EQ(_action_request_sub.get().action, ACTION_UNKILL);
 }
