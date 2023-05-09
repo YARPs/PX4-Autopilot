@@ -41,6 +41,7 @@ ManualControl::ManualControl() :
 	ModuleParams(nullptr),
 	ScheduledWorkItem(MODULE_NAME, px4::wq_configurations::hp_default)
 {
+	updateParams();
 }
 
 ManualControl::~ManualControl()
@@ -85,6 +86,16 @@ void ManualControl::Run()
 		updateParams();
 	}
 
+	processInput();
+
+	// reschedule timeout
+	ScheduleDelayed(200_ms);
+
+	perf_end(_loop_perf);
+}
+
+void ManualControl::processInput()
+{
 	const hrt_abstime now = hrt_absolute_time();
 	_selector.updateValidityOfChosenInput(now);
 
@@ -266,11 +277,6 @@ void ManualControl::Run()
 	}
 
 	_last_time = now;
-
-	// reschedule timeout
-	ScheduleDelayed(200_ms);
-
-	perf_end(_loop_perf);
 }
 
 void ManualControl::updateParams()

@@ -74,6 +74,9 @@ public:
 
 	int print_status() override;
 
+protected:
+	void processInput();
+
 private:
 	static constexpr int MAX_MANUAL_INPUT_COUNT = 3;
 
