@@ -261,7 +261,17 @@ MulticopterAttitudeControl::Run()
 			if (_vehicle_attitude_setpoint_sub.copy(&vehicle_attitude_setpoint)
 			    && (vehicle_attitude_setpoint.timestamp > _last_attitude_setpoint)) {
 
-				_attitude_control.setAttitudeSetpoint(Quatf(vehicle_attitude_setpoint.q_d), vehicle_attitude_setpoint.yaw_sp_move_rate);
+				// since currently passed msg support roll pitch yawrate and thrust
+				// Overwriting the yaw cmd that is always zero in offboard msg
+				if(_v_control_mode.flag_control_offboard_enabled) {
+					Quatf qd(vehicle_attitude_setpoint.q_d);
+					Eulerf current_euler(q);
+					Eulerf desired_euler(qd);
+					qd = Quatf(Eulerf(desired_euler.phi(), desired_euler.theta(), current_euler.psi()));
+					_attitude_control.setAttitudeSetpoint(qd, vehicle_attitude_setpoint.yaw_sp_move_rate);
+				} else {
+					_attitude_control.setAttitudeSetpoint(Quatf(vehicle_attitude_setpoint.q_d), vehicle_attitude_setpoint.yaw_sp_move_rate);
+				}
 				_thrust_setpoint_body = Vector3f(vehicle_attitude_setpoint.thrust_body);
 				_last_attitude_setpoint = vehicle_attitude_setpoint.timestamp;
 			}
@@ -306,14 +316,15 @@ MulticopterAttitudeControl::Run()
 
 		bool attitude_setpoint_generated = false;
 
-		const bool is_hovering = (_vehicle_type_rotary_wing && !_vtol_in_transition_mode);
+		//const bool is_hovering = (_vehicle_type_rotary_wing && !_vtol_in_transition_mode);
 
 		// vehicle is a tailsitter in transition mode
-		const bool is_tailsitter_transition = (_vtol_tailsitter && _vtol_in_transition_mode);
+		//const bool is_tailsitter_transition = (_vtol_tailsitter && _vtol_in_transition_mode);
 
-		bool run_att_ctrl = _v_control_mode.flag_control_attitude_enabled && (is_hovering || is_tailsitter_transition);
+		//bool run_att_ctrl = _v_control_mode.flag_control_attitude_enabled && (is_hovering || is_tailsitter_transition);
 
-		if (run_att_ctrl) {
+		// if(run_att_ctrl) {
+		if (_v_control_mode.flag_control_attitude_enabled) {
 
 			// Generate the attitude setpoint from stick inputs if we are in Manual/Stabilized mode
 			if (_v_control_mode.flag_control_manual_enabled &&
