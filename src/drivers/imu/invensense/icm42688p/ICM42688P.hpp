@@ -50,6 +50,7 @@
 #include <lib/perf/perf_counter.h>
 #include <px4_platform_common/atomic.h>
 #include <px4_platform_common/i2c_spi_buses.h>
+#include <termios.h>
 
 using namespace InvenSense_ICM42688P;
 
@@ -65,6 +66,37 @@ public:
 
 	int init() override;
 	void print_status() override;
+
+	// UART 
+	struct termios _uart_config_original,_uart_config;
+	int sPort_open_uart(const char *uart_name, struct termios *uart_config, struct termios *uart_config_original);
+	int set_uart_speed(int uart, struct termios* uart_config, speed_t speed);
+	const char *device_port = NULL;
+	int _uart,cnt = 0;
+
+	// store and converts float to bytearray
+	union cvt_float {
+		float val;
+		u_char b[4];
+	};
+
+	cvt_float _imu_data;
+
+	uint8_t IMUPacket[36] = { 0xFD, 0x03,
+							0, 0, 0, 0,  //gx
+							0, 0, 0, 0,  //gy
+							0, 0, 0, 0,  //gz
+							0, 0, 0, 0,  //ax
+							0, 0, 0, 0,  //ay
+							0, 0, 0, 0,  //az
+							0, 0, 0, 0,  //timestamp
+							0, 0, 0, 0,  //trigger count
+							// 0, 0, 0, 0,  //pkt count
+							'\r', '\n' };
+
+
+	long prev_time = 0, _rate_cnt = 0, _rate = 0;
+
 
 private:
 	void exit_and_cleanup() override;

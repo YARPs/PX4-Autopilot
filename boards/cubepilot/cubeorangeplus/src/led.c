@@ -62,6 +62,8 @@ extern void led_off(int led);
 extern void led_toggle(int led);
 __END_DECLS
 
+#define out (GPIO_OUTPUT|GPIO_PORTE|GPIO_PIN14)
+
 #  define xlat(p) (p)
 static uint32_t g_ledmap[] = {
 	GPIO_nLED_AMBER,
@@ -74,6 +76,12 @@ __EXPORT void led_init(void)
 			stm32_configgpio(g_ledmap[l]);
 		}
 	}
+	uint32_t pin = out;
+
+	//GPIO use case 
+	stm32_configgpio(pin);
+	stm32_gpiowrite(pin , true);
+	
 }
 
 static void phy_set_led(int led, bool state)

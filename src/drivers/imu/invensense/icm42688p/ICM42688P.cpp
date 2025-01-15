@@ -68,6 +68,10 @@ ICM42688P::ICM42688P(const I2CSPIDriverConfig &config) :
 	}
 
 	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
+
+	device_port = "/dev/ttyS5";
+	
+	
 }
 
 ICM42688P::~ICM42688P()
@@ -82,11 +86,13 @@ ICM42688P::~ICM42688P()
 
 int ICM42688P::init()
 {
-	int ret = SPI::init();
+    _uart = sPort_open_uart(device_port, &_uart_config, &_uart_config_original);
+    set_uart_speed(_uart, &_uart_config, B115200);
+    int ret = SPI::init();
 
-	if (ret != PX4_OK) {
-		DEVICE_DEBUG("SPI::init failed (%i)", ret);
-		return ret;
+    if (ret != PX4_OK) {
+        DEVICE_DEBUG("SPI::init failed (%i)", ret);
+        return ret;
 	}
 
 	return Reset() ? 0 : -1;
@@ -109,17 +115,20 @@ void ICM42688P::exit_and_cleanup()
 
 void ICM42688P::print_status()
 {
+
+	// _rate++;
 	I2CSPIDriverBase::print_status();
 
 	PX4_INFO("FIFO empty interval: %d us (%.1f Hz)", _fifo_empty_interval_us, 1e6 / _fifo_empty_interval_us);
 	PX4_INFO("Clock input: %s", _enable_clock_input ? "enabled" : "disabled");
-
+	PX4_INFO("%ld",_rate);
 	perf_print_counter(_bad_register_perf);
 	perf_print_counter(_bad_transfer_perf);
 	perf_print_counter(_fifo_empty_perf);
 	perf_print_counter(_fifo_overflow_perf);
 	perf_print_counter(_fifo_reset_perf);
 	perf_print_counter(_drdy_missed_perf);
+	
 }
 
 int ICM42688P::probe()
@@ -151,6 +160,7 @@ int ICM42688P::probe()
 void ICM42688P::RunImpl()
 {
 	const hrt_abstime now = hrt_absolute_time();
+	PX4_INFO("runImpl");
 
 	switch (_state) {
 	case STATE::RESET:
@@ -231,6 +241,41 @@ void ICM42688P::RunImpl()
 			hrt_abstime timestamp_sample = now;
 			uint8_t samples = 0;
 
+			_rate_cnt++;
+
+			_imu_data.val  = 11;
+
+			IMUPacket[2] = _imu_data.b[0];
+			IMUPacket[3] = _imu_data.b[1];
+			IMUPacket[4] = _imu_data.b[2];
+			IMUPacket[5] = _imu_data.b[3];
+
+			if (hrt_absolute_time() - prev_time  > 1000000){
+				prev_time = hrt_absolute_time();
+				_rate = _rate_cnt;
+				_rate_cnt = 0;
+			}
+			
+			_imu_data.val = _rate;
+			
+			IMUPacket[6] = _imu_data.b[0];
+			IMUPacket[7] = _imu_data.b[1];
+			IMUPacket[8] = _imu_data.b[2];
+			IMUPacket[9] = _imu_data.b[3];
+
+			::write(_uart,&IMUPacket[cnt],1);
+			::write(_uart,&IMUPacket[cnt+1],1);
+			::write(_uart, &IMUPacket[cnt + 2], 1);
+			::write(_uart,&IMUPacket[cnt+3],1);
+			::write(_uart,&IMUPacket[cnt+4],1);
+			cnt+=5;
+
+			if (cnt > 36){
+				cnt = 0;	
+			}
+
+
+			
 			if (_data_ready_interrupt_enabled) {
 				// scheduled from interrupt if _drdy_timestamp_sample was set as expected
 				const hrt_abstime drdy_timestamp_sample = _drdy_timestamp_sample.fetch_and(0);
@@ -436,18 +481,30 @@ bool ICM42688P::Configure()
 
 int ICM42688P::DataReadyInterruptCallback(int irq, void *context, void *arg)
 {
+	
 	static_cast<ICM42688P *>(arg)->DataReady();
 	return 0;
 }
 
 void ICM42688P::DataReady()
 {
+	// cnt ++;
+	// _rate = 1000;
+	// // uint8_t a = 10;
+	
+    // if (hrt_absolute_time() - prev_time > 1000000) {
+    //     prev_time = hrt_absolute_time();
+	// 	// _rate = cnt;
+	// 	PX4_INFO("%ld",cnt);
+	// 	cnt = 0;
+    // }
 	_drdy_timestamp_sample.store(hrt_absolute_time());
 	ScheduleNow();
 }
 
 bool ICM42688P::DataReadyInterruptConfigure()
 {
+	// _rate = 100
 	if (_drdy_gpio == 0) {
 		return false;
 	}
@@ -892,4 +949,75 @@ bool ICM42688P::ProcessTemperature(const FIFO::DATA fifo[], const uint8_t sample
 	}
 
 	return false;
+}
+
+
+// open uart port ad file
+int ICM42688P::sPort_open_uart(const char* uart_name,
+    struct termios* uart_config,
+    struct termios* uart_config_original) {
+    /* Open UART */
+    const int uart = ::open(uart_name, O_RDWR | O_NOCTTY | O_NONBLOCK);
+
+    if (uart < 0) {
+        PX4_ERR("Error opening port: %s (%i)", uart_name, errno);
+        return -1;
+    }
+
+    /* Back up the original UART configuration to restore it after exit */
+    int termios_state;
+
+    if ((termios_state = tcgetattr(uart, uart_config_original)) < 0) {
+        PX4_ERR("tcgetattr %s: %d\n", uart_name, termios_state);
+        ::close(uart);
+        return -1;
+    }
+
+    /* Fill the struct for the new configuration */
+    tcgetattr(uart, uart_config);
+
+    /* Disable output post-processing */
+    uart_config->c_oflag &= ~OPOST;
+
+    uart_config->c_cflag |= (CLOCAL | CREAD); /* ignore modem controls */
+    uart_config->c_cflag &= ~CSIZE;
+    uart_config->c_cflag |= CS8;      /* 8-bit characters */
+    uart_config->c_cflag &= ~PARENB;  /* no parity bit */
+    uart_config->c_cflag &= ~CSTOPB;  /* only need 1 stop bit */
+    uart_config->c_cflag &= ~CRTSCTS; /* no hardware flowcontrol */
+
+    /* setup for non-canonical mode */
+    uart_config->c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+    uart_config->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+
+    /* Set baud rate */
+    const speed_t speed = B9600;
+
+    if (cfsetispeed(uart_config, speed) < 0 || cfsetospeed(uart_config, speed) < 0) {
+        PX4_ERR("%s: %d (cfsetispeed, cfsetospeed)\n", uart_name, termios_state);
+        ::close(uart);
+        return -1;
+    }
+
+    if ((termios_state = tcsetattr(uart, TCSANOW, uart_config)) < 0) {
+        PX4_ERR("%s (tcsetattr)\n", uart_name);
+        ::close(uart);
+        return -1;
+    }
+
+    return uart;
+}
+
+// uart baudrate
+int ICM42688P::set_uart_speed(int uart, struct termios* uart_config, speed_t speed) {
+
+    if (cfsetispeed(uart_config, speed) < 0) {
+        return -1;
+    }
+
+    if (tcsetattr(uart, TCSANOW, uart_config) < 0) {
+        return -1;
+    }
+
+    return uart;
 }
