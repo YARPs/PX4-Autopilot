@@ -9,5 +9,5 @@
 # fi
 
 # DShot telemetry is always on UART7
-dshot telemetry /dev/ttyS5
+# dshot telemetry /dev/ttyS5
 #thoneflow start -d /dev/ttyS5

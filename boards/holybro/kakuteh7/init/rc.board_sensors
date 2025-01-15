@@ -5,9 +5,10 @@
 board_adc start
 
 # The default IMU is an ICM20689, but there might also be an MPU6000
-if ! mpu6000 -R 6 -s start
-then
-	icm20689 -R 6 -s start
-fi
+mpu6000 -R 6 -s start
+# if ! mpu6000 -R 6 -s start
+# then
+# 	icm20689 -R 6 -s start
+# fi
 
 bmp280 -X start
