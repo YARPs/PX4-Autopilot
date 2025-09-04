@@ -168,6 +168,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 
 	/* initial LED state */
 	drv_led_start();
+	// neopixel_init();
 	led_off(LED_AMBER);
 
 	if (board_hardfault_init(2, true) != 0) {

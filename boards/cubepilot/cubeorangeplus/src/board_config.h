@@ -71,6 +71,20 @@
 /* LEDs */
 #define GPIO_nLED_AMBER        /* PE12 */  (GPIO_OUTPUT|GPIO_OPENDRAIN|GPIO_SPEED_50MHz|GPIO_OUTPUT_SET|GPIO_PORTE|GPIO_PIN12)
 
+
+#define GPIO_RGB_S /* PB0  */                                                                      \
+    (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_2MHz | GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN11)
+#define BOARD_HAS_N_S_RGB_LED       3  /* Uses 8 SK6812 digital led chip */
+
+#if defined(USE_S_RGB_LED_DMA)
+#  define S_RGB_LED_DMA              DMAMAP_DMA12_TIM1CH2_1
+#  define S_RGB_LED_TIMER                1   /* timer 1    */
+#  define S_RGB_LED_CHANNEL              2   /* channel 2  */
+// #  define S_RGB_LED_CHANNELN             1   /* channel 2N */
+#  define S_RGB_LED_TIM_GPIO             GPIO_TIM1_CH2OUT_2
+#endif
+
+
 #define BOARD_HAS_CONTROL_STATUS_LEDS      1
 #define BOARD_ARMED_LED  LED_AMBER
 

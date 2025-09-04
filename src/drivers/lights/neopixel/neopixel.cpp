@@ -237,7 +237,19 @@ void NEOPIXEL::Run()
             break;
         }
 	    }
-      neopixel_write(_leds, _number_of_packages);
+            _leds[1].R() = 250;
+            _leds[1].G() = 0;
+            _leds[1].B() = 0;
+            _leds[2].R() = 0;
+            _leds[2].G() = 250;
+            _leds[2].B() = 0;
+            _leds[0].R() = 0;
+            _leds[0].G() = 0;
+            _leds[0].B() = 250;
+            PX4_INFO("r  %i LEDs", _leds[0].R());
+            PX4_INFO("r  %i LEDs", _leds[1].R());
+            PX4_INFO("r  %i LEDs", _leds[2].R());
+            neopixel_write(_leds, _number_of_packages);
 	}
 
 	/* re-queue ourselves to run again later */
