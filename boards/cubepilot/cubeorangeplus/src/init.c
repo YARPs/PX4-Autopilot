@@ -63,10 +63,12 @@
 #include <mpu.h>
 
 __BEGIN_DECLS
-extern void led_init(void);
-extern void led_on(int led);
-extern void led_off(int led);
+// extern void led_init(void);
+// extern void led_on(int led);
+// extern void led_off(int led);
+extern void rgb_led(int r, int g, int b, int freqs);
 __END_DECLS
+
 
 /************************************************************************************
  * Name: board_peripheral_reset
@@ -167,12 +169,14 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	}
 
 	/* initial LED state */
-	drv_led_start();
-	led_off(LED_AMBER);
+	// drv_led_start();
+	// led_off(LED_AMBER);
+        rgb_led(128, 128, 128, 10);
 
-	if (board_hardfault_init(2, true) != 0) {
-		led_on(LED_AMBER);
-	}
+        if (board_hardfault_init(2, true) != 0) {
+		// led_on(LED_AMBER);
+                rgb_led(128, 128, 128, 10);
+        }
 
 #ifdef CONFIG_MMCSD
 	/* Mount the SDIO-based MMC/SD block driver */

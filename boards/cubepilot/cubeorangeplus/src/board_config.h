@@ -74,6 +74,34 @@
 #define BOARD_HAS_CONTROL_STATUS_LEDS      1
 #define BOARD_ARMED_LED  LED_AMBER
 
+#define GPIO_RGB_S /* PB0  */                                                                      \
+    (GPIO_OUTPUT | GPIO_PUSHPULL | GPIO_SPEED_2MHz | GPIO_OUTPUT_CLEAR | GPIO_PORTE | GPIO_PIN11)
+#define BOARD_SRGBLED_PORT STM32_GPIOE_ODR
+#define BOARD_SRGBLED_BIT 0
+
+__BEGIN_DECLS
+#define BOARD_HAS_N_S_RGB_LED 8 /* Uses 8 SK6812 digital led chip */
+#define BOARD_MAX_LEDS BOARD_HAS_N_S_RGB_LED
+
+/* USE_S_RGB_LED_DMAis passed in from the *.cmake file
+ * Bootloader is not timming sensitive and can use the SW version as a
+ * size savings
+ * The Application can not as it needs DMA to maintain reall time.
+ */
+
+#if defined(USE_S_RGB_LED_DMA)
+#    define S_RGB_LED_DMA DMAMAP_DMA12_TIM1CH2_1
+#    define S_RGB_LED_TIMER 1    /* timer 1    */
+#    define S_RGB_LED_CHANNEL 2  /* channel 2  */
+#    define S_RGB_LED_CHANNELN 2 /* channel 2N */
+#    define S_RGB_LED_TIM_GPIO GPIO_TIM1_CH2OUT_2
+#endif
+
+__END_DECLS
+
+
+
+
 /* ADC channels */
 #define PX4_ADC_GPIO  \
 	/* PA2 */  GPIO_ADC12_INP14,  \

@@ -1,6 +1,7 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2015 PX4 Development Team. All rights reserved.
+ *   Author: David Sidrane<david_s5@nscdg.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,20 +32,6 @@
  *
  ****************************************************************************/
 
-#pragma once
-
-// DMAMUX1
-#define DMAMAP_SPI1_RX    DMAMAP_DMA12_SPI1RX_0 /* DMA1:37 */
-#define DMAMAP_SPI1_TX    DMAMAP_DMA12_SPI1TX_0 /* DMA1:38 */
-
-#define DMAMAP_USART6_RX   DMAMAP_DMA12_USART6RX_1 /* DMA1:71 */
-#define DMAMAP_USART6_TX   DMAMAP_DMA12_USART6TX_1 /* DMA1:72 */
-
-#define DMAMAP_SPI4_RX    DMAMAP_DMA12_SPI4RX_0 /* DMA1:83 */
-#define DMAMAP_SPI4_TX    DMAMAP_DMA12_SPI4TX_0 /* DMA1:84 */
-// DMA1 Channel/Stream Selections
-//--------------------------------------------//---------------------------//----------------
-
-//  DMA2 Channel/Stream Selections
-//--------------------------------------------//---------------------------//----------------
-// #define DMAMAP_TIM1_CH2 DMAMAP_TIM1_CH2_2  // DMA2, Stream 6, Channel 6    SLED
+__BEGIN_DECLS
+void rgb_led(int r, int g, int b, int freqs);
+__END_DECLS

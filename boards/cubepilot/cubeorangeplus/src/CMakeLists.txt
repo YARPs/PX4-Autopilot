@@ -40,6 +40,7 @@ if("${PX4_BOARD_LABEL}" STREQUAL  "bootloader")
 			nuttx_arch
 			nuttx_drivers
 			bootloader
+			platform_srgbled
 	)
 	target_include_directories(drivers_board PRIVATE ${PX4_SOURCE_DIR}/platforms/nuttx/src/bootloader/common)
 
@@ -47,7 +48,7 @@ else()
 	add_library(drivers_board
 		i2c.cpp
 		init.c
-		led.c
+		led.cpp
 		spi.cpp
 		timer_config.cpp
 		usb.c
@@ -57,9 +58,11 @@ else()
 		PRIVATE
 			arch_io_pins
 			arch_spi
-			drivers__led
+			# drivers__led
 			nuttx_arch
 			nuttx_drivers
 			px4_layer
+			platform_srgbled
+
 	)
 endif()

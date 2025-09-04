@@ -373,14 +373,11 @@ extern int neopixel_write(neopixel::NeoLEDData *led_data, int number_of_packages
 	}
 
 	// Set up the DMA Operations
+        stm32_dmacfg_t tmp{
+            _TIM_REG(STM32_GTIM_DMAR_OFFSET), (uint32_t) bits, arraySize(bits), SLED_DMA_SCR};
+        stm32_dmasetup(dma_handle, &tmp);
 
-	stm32_dmasetup(dma_handle,
-		       _TIM_REG(STM32_GTIM_DMAR_OFFSET),
-		       (uint32_t) bits,
-		       arraySize(bits),
-		       SLED_DMA_SCR);
-
-	// atomic operations
+        // atomic operations
 	irqstate_t flags = px4_enter_critical_section();
 
 	// Prep the timer for update, start with the first bit.

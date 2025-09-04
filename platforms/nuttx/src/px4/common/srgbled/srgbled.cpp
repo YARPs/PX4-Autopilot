@@ -95,9 +95,9 @@
 #define BITS_PER_COLOR  8  // Each LED has 8 bits of luminosity
 #define BITS_PER_PACKAGE (BITS_PER_COLOR * COLOR_PER_LED)
 
-#if defined(BOARD_HAS_N_S_RGB_LED) && !defined(S_RGB_LED_DMA)
+// #if defined(BOARD_HAS_N_S_RGB_LED) && !defined(S_RGB_LED_DMA)
 
-
+// PX4_INFO()
 int neopixel_write_no_dma(uint8_t r, uint8_t g, uint8_t b, uint8_t led_count)
 {
 	neopixel::NeoLEDData::led_data_t data;
@@ -125,4 +125,4 @@ int neopixel_write_no_dma(uint8_t r, uint8_t g, uint8_t b, uint8_t led_count)
 	px4_leave_critical_section(state);
 	return 0;
 }
-#endif // BOARD_HAS_SRGBLED
+// #endif // BOARD_HAS_SRGBLED

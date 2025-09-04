@@ -39,4 +39,5 @@ px4_add_module(
 	DEPENDS
 		led
 		arch_srgbled_dma
+		platform_srgbled
 	)
